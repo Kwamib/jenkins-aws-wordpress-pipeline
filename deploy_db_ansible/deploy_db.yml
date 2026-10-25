@@ -1,0 +1,49 @@
+---
+- name: "CliXX DB Deployment Ansible Playbook"
+  hosts: localhost
+  connection: local
+  become: false
+
+  vars:
+    instance_id: wordpressdbclixxjenkins
+    db_snapshot: arn:aws:rds:us-east-1:123456789012:snapshot:clixx-db-development-snapshot
+    security_group: sg-0123456789abcdef0
+    region: us-east-1
+
+  tasks:
+    - name: Restore DB from snapshot
+      amazon.aws.rds_instance:
+        state: present
+        db_instance_identifier: "{{ instance_id }}"
+        creation_source: snapshot
+        snapshot_identifier: "{{ db_snapshot }}"
+        db_instance_class: db.t3.small
+        allocated_storage: 20
+        master_username: "{{ db_master_username | default('wordpressuser') }}"
+        master_user_password: "{{ db_master_password }}"
+        engine: mysql
+        engine_version: "8.0.35"
+        wait: true
+        region: "{{ region }}"
+
+    - name: Modify RDS instance to add security group
+      amazon.aws.rds_instance:
+        state: present
+        db_instance_identifier: "{{ instance_id }}"
+        vpc_security_group_ids:
+          - "{{ security_group }}"
+        apply_immediately: true
+        wait: true
+        region: "{{ region }}"
+
+    - name: Get RDS instance info (to retrieve endpoint)
+      community.aws.rds_instance_info:
+        db_instance_identifier: "{{ instance_id }}"
+        region: "{{ region }}"
+      register: rds_info
+
+    - name: Write DB endpoint to file for downstream use
+      copy:
+        dest: db.setup
+        content: |
+          db_endpoint: "{{ rds_info.instances[0].endpoint.address }}"

@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+python3-virtualenv/
+venv/
+*.pyo
+
+# Node
+node_modules/
+
+# Logs and build artifacts
+*.log
+*.zip
+*.tar.gz
+*.tgz
+*.bak
+
+# Git and config
+.git/
+.gitignore
+.dockerignore
+.env
+
+# Docker internals
+Dockerfile
+.docker/
+tests/
+README.md
